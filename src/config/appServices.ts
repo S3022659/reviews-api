@@ -11,9 +11,9 @@ import { listReviews } from '../app/list-reviews';
 
 // Hardwired Cosmos DB options for local development/testing
 const COSMOS_OPTIONS: CosmosReviewRepoOptions = {
-  endpoint: 'https://reviews-lab-ab47-cosmos-uksouth.documents.azure.com:443/',
-  databaseId: 'reviews-db',
-  containerId: 'reviews',
+  endpoint: process.env.COSMOS_ENDPOINT, // || 'https://reviews-lab-jc76-cosmos.documents.azure.com:443/',
+  databaseId: process.env.COSMOS_DATABASE_ID, // || 'reviews-db',
+  containerId: process.env.COSMOS_CONTAINER_ID, // || 'reviews',
   key: process.env.COSMOS_KEY || '',
 };
 

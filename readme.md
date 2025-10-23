@@ -10,7 +10,7 @@ az login
 
 ```sh
 az group create \
-  --name reviews-lab-ab47-rg \
+  --name reviews-lab-jc76-rg \
   --location uksouth
 ```
 
@@ -24,8 +24,8 @@ az extension add --name cosmosdb-preview
 
 ```sh
 az cosmosdb create \
-  --resource-group reviews-lab-ab47-rg \
-  --name reviews-lab-ab47-cosmos \
+  --resource-group reviews-lab-jc76-rg \
+  --name reviews-lab-jc76-cosmos \
   --capacity-mode Serverless \
   --backup-policy-type Periodic \
   --backup-redundancy Local
@@ -35,8 +35,8 @@ az cosmosdb create \
 
 ```sh
 az cosmosdb sql database create \
-  --resource-group reviews-lab-ab47-rg \
-  --account-name reviews-lab-ab47-cosmos \
+  --resource-group reviews-lab-jc76-rg \
+  --account-name reviews-lab-jc76-cosmos \
   --name reviews-db
 ```
 
@@ -44,8 +44,8 @@ az cosmosdb sql database create \
 
 ```sh
 az cosmosdb sql container create \
-  --resource-group reviews-lab-ab47-rg \
-  --account-name reviews-lab-ab47-cosmos \
+  --resource-group reviews-lab-jc76-rg \
+  --account-name reviews-lab-jc76-cosmos \
   --database reviews-db \
   --name reviews \
   --partition-key-path "/id"
@@ -57,8 +57,8 @@ You have now finished provisioning a datastore for this app.
 
 ```sh
 az cosmosdb show \
-  --resource-group reviews-lab-ab47-rg \
-  --name reviews-lab-ab47-cosmos \
+  --resource-group reviews-lab-jc76-rg \
+  --name reviews-lab-jc76-cosmos \
   --query "documentEndpoint" \
   --output tsv
 ```
@@ -70,8 +70,8 @@ Use the returned endpoint to point the app at its database.
 ```sh
 export COSMOS_KEY=$(\
   az cosmosdb keys list \
-    --resource-group reviews-lab-ab47-rg \
-    --name reviews-lab-ab47-cosmos \
+    --resource-group reviews-lab-jc76-rg \
+    --name reviews-lab-jc76-cosmos \
     --query primaryMasterKey \
     -o tsv \
 )
@@ -90,3 +90,71 @@ npm run seed
 ```sh
 npm start
 ```
+
+az group create \
+ --name reviews-test-jc76-rg \
+ --location uksouth
+
+## 4. Create a Cosmos Account (Serverless)
+
+```sh
+az cosmosdb create \
+  --resource-group reviews-test-jc76-rg \
+  --name reviews-test-jc76-cosmos \
+  --capacity-mode Serverless \
+  --backup-policy-type Periodic \
+  --backup-redundancy Local
+```
+
+## 5. Create a Database
+
+```sh
+az cosmosdb sql database create \
+  --resource-group reviews-test-jc76-rg \
+  --account-name reviews-test-jc76-cosmos \
+  --name reviews-db
+```
+
+## 6. Create a Container
+
+```sh
+az cosmosdb sql container create \
+  --resource-group reviews-test-jc76-rg \
+  --account-name reviews-test-jc76-cosmos \
+  --database reviews-db \
+  --name reviews \
+  --partition-key-path "/id"
+```
+
+az storage account create \
+ --name reviewstestjc76funcstore \
+ --location uksouth \
+ --resource-group reviews-test-jc76-rg \
+ --sku Standard_LRS
+
+az functionapp create \
+ --name reviews-test-jc76-func \
+ --resource-group reviews-test-jc76-rg \
+ --storage-account reviewstestjc76funcstore \
+ --consumption-plan-location uksouth \
+ --runtime node \
+ --functions-version 4
+
+export COSMOS_KEY=$(\
+ az cosmosdb keys list \
+ --resource-group reviews-lab-jc76-rg \
+ --name reviews-lab-jc76-cosmos \
+ --query primaryMasterKey \
+ -o tsv \
+)
+
+az functionapp config appsettings set \
+ --name reviews-test-jc76-func \
+ --resource-group reviews-test-jc76-rg \
+ --settings COSMOS_KEY=$COSMOS_KEY COSMOS_ENDPOINT="https://reviews-test-jc76-cosmos.documents.azure.com:443/ COSMOS_DATABASE_ID=$COSMOS_DATABASE_ID COSMOS_CONTAINER_ID=$COSMOS_CONTAINER_ID"
+
+func azure functionapp publish reviews-test-jc76-func
+
+export COSMOS_ENDPOINT="https://reviews-test-jc76-cosmos.documents.azure.com:443/"
+export COSMOS_DATABASE_ID="reviews-db"
+export COSMOS_CONTAINER_ID="reviews"
